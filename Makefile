@@ -89,6 +89,10 @@ tellus_bin: tellus
 	${OBJCOPY} -O binary $(RELEASE_BINS)guestvm guestvm_raw
 	./create_guest_image.sh tellus_raw guestvm_raw tellus_guestvm
 
+edk2_bin:
+	cp edk2 edk2_raw
+	cat edk2_mm >> edk2_raw
+
 guestvm: sbirs
 	RUSTFLAGS='-Ctarget-feature=+v -Clink-arg=-Tlds/guest.lds' cargo build $(CARGO_FLAGS) --package test_workloads --release --bin guestvm
 
@@ -128,6 +132,14 @@ run_tellus: tellus_bin salus
 		$(MACH_ARGS) \
 		-kernel $(RELEASE_BINS)salus \
 		-device guest-loader,kernel=tellus_guestvm,addr=$(KERNEL_ADDR) \
+		$(EXTRA_QEMU_ARGS)
+
+run_edk2: edk2_bin salus
+	../$(QEMU_BIN) \
+		$(MACH_ARGS) \
+		-kernel $(RELEASE_BINS)salus \
+		-device guest-loader,kernel=edk2_raw,addr=$(KERNEL_ADDR) \
+		-bios ../opensbi-riscv64-generic-fw_dynamic.bin \
 		$(EXTRA_QEMU_ARGS)
 
 run_linux: salus
